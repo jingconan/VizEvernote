@@ -33,7 +33,6 @@ def parseNoteXML(note_name):
     for ind, (action, elem) in enumerate(context):
         text = elem.text
         if elem.tag == 'content':
-            text = []
             # x = to_valid_xml(elem.text.encode('utf-8'))
             x = elem.text.encode('utf-8')
             r = etree.parse(StringIO(x), p)
@@ -43,7 +42,12 @@ def parseNoteXML(note_name):
                 except:
                     print 'cannot print'
         note_dict[elem.tag] = text
+        # NixNote use "Note"; Evernote Windows & Mac Client use "note"
+        # if elem.tag == "Note" or elem.tag == 'note':
         if elem.tag == "note":
             notes.append(note_dict)
             note_dict = {}
     return notes
+
+if __name__ == "__main__":
+    notes = parseNoteXML('../test.nnex')
