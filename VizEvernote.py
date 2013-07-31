@@ -75,8 +75,8 @@ def group_count(items, group_key):
     return dict((k, len(list(group))) for k, group in groups)
 
 
-class VizEvernote(object):
-    """  Visualize Evernote Data
+class EvernoteAnalyzer(object):
+    """  Analyze Evernote Data
 
     Parameters
     ---------------
@@ -94,6 +94,7 @@ class VizEvernote(object):
         'month': 30 * 24 * 3600,
         'week': 7 * 24 * 3600,
         'year': 365 * 24 * 3600,
+        'day': 24 * 3600,
     }
 
     def __init__(self, notes=None):
@@ -104,7 +105,31 @@ class VizEvernote(object):
     def parse_time(string):
         return time.strptime(string, "%Y%m%dT%H%M%SZ")
 
-    def count(self, t_type, resolution):
+    @staticmethod
+    def filter(notes, t_type, tag=None):
+        """  filter notes
+
+        Parameters
+        ---------------
+        notes : list
+            a list of notes
+        t_type : {'created', 'updated'}
+            type of time. Only notes with this field is presented
+        tag : {0, str}
+            if tag == 0: tag field is note checked. Otherwise, only notes
+                whose tag field equals are preserved.
+
+        Returns
+        --------------
+        selected_notes : list
+        """
+        if tag == '':
+            return [note for note in notes if note.get(t_type)]
+        else:
+            return [note for note in notes
+                    if note.get(t_type) and note.get('tag', '') == tag]
+
+    def count(self, t_type, resolution, tag=None):
         """ count the histogram of time according to resolution
 
         Parameters
@@ -117,24 +142,29 @@ class VizEvernote(object):
         --------------
         state : dict
         """
-        stat_key = t_type + '-' + resolution
-        tm = [self.parse_time(note[t_type])
-              for note in self.notes
-              if note.get(t_type)]
+        if tag is None:
+            stat_key = '%s-%s' % (t_type, resolution)
+        else:
+            stat_key = '%s-%s-%s' % (t_type, resolution, tag)
+
+        notes = self.filter(self.notes, t_type, tag)
+        tm = [self.parse_time(note[t_type]) for note in notes]
         sorted_tm = sorted(tm, key=lambda x: time.mktime(x))
         group_key = lambda x: time.strftime(self.key_map[resolution], x)
         self.stat[stat_key] = group_count(sorted_tm, group_key)
         return self.stat[stat_key]
 
+    def group_by_tags(self, t_type):
+        notes = sorted(self.notes, key=lambda x: x.get('tag'))
+        tags_groups = itertools.groupby(notes, lambda x: x.get('tag'))
+        tag_t = dict()
+        for tag, tag_notes in tags_groups:
+            stat_key = '%s-%s' % (tag, t_type)
+            tag_t[stat_key] = [note[t_type] for note in tag_notes if note.get(t_type)]
+        self.stat['tag_t'] = tag_t
+
     def dump(self, fp):
         json.dump(self.stat, fp)
-
-    def load(self, fp):
-        self.stat = json.load(fp)
-
-    @staticmethod
-    def sort_pair(d):
-        return zip(*sorted(d.items()))
 
     def strptime(self, t_str, resolution):
         """  convert **t_str** to datetime.time_struct
@@ -155,7 +185,13 @@ class VizEvernote(object):
             return datetime.strptime(t_str + '-0', self.key_map['week'] + '-%w')
         return datetime.strptime(t_str, self.key_map[resolution])
 
-    def viz_count(self, t_type, resolution, width, tick_num, rotation):
+
+class EvernoteVisualizer(EvernoteAnalyzer):
+
+    def load(self, fp):
+        self.stat = json.load(fp)
+
+    def plot_count(self, t_type, resolution, width, tick_num, rotation):
         """  visualize the counts for notes for a duration.
 
         Parameters
@@ -173,7 +209,10 @@ class VizEvernote(object):
         Returns
         --------------
         """
-        keys, values = self.sort_pair(self.stat['%s-%s' % (t_type, resolution)])
+
+        def sort_pair(d):
+            return zip(*sorted(d.items()))
+        keys, values = sort_pair(self.stat['%s-%s' % (t_type, resolution)])
 
         start = self.strptime(keys[0], resolution)
         ind = np.array([get_time_diff(start, self.strptime(k, resolution), resolution)
@@ -184,42 +223,73 @@ class VizEvernote(object):
         plt.title("No. of evernotes per '%s' according to '%s' time."
                   % (resolution, t_type))
 
-    def viz(self):
+    def plot_tags_t(self, t_type):
+        tag_t = self.stat['tag_t']
+        tag_seq = 0
+        markers = 'o+x>'
+        tags = []
+        # xtick_labels = []
+        min_t = np.inf
+        max_t = -np.inf
+        for k, v in tag_t.iteritems():
+            kr = k.rsplit('-')
+            if kr[1] == t_type and kr[0] != 'None':
+                tags.append(kr[0])
+                tag_seq += 1
+                vt = np.array([time.mktime(self.parse_time(v_)) for v_ in v])
+                min_vt = min(vt)
+                min_t = min_vt if min_vt < min_t else min_t
+                max_vt = max(vt)
+                max_t = max_vt if max_vt > max_t else max_t
+                # vt /= (3600 * 24 * 30)
+                plt.plot(vt, tag_seq * np.ones((len(vt),)),
+                         linestyle='', marker=markers[tag_seq % len(markers)])
+        print('tags', tags)
+        # dur = 3600 * 24
+        dur = 'day'
+        xticks = np.arange(min_t, max_t, self.dur_map[dur])
+        plt.xticks(xticks, ['%s %s' % (dur, str(i)) for i in range(len(xticks))])
+        plt.yticks(range(1, len(tags) + 1), tags)
+        plt.ylim([0, len(tags) + 1])
+
+    def plot(self):
         """  shortcut for visualization
         """
         # plt.figure()
         # self.viz_count('created', 'week', width=0.5, tick_num=30, rotation=90)
 
         # plt.figure()
-        # self.viz_count('created', 'month', width=0.5, tick_num=None, rotation=90)
+        # self.plot_count('created', 'month', width=0.5, tick_num=None, rotation=90)
 
         # plt.figure()
-        # self.viz_count('created', 'year', width=0.5, tick_num=None, rotation=20)
-
-
-        plt.figure()
-        self.viz_count('updated', 'week', width=0.5, tick_num=30, rotation=70)
+        # self.plot_count('created', 'year', width=0.5, tick_num=None, rotation=20)
 
         plt.figure()
-        self.viz_count('updated', 'month', width=0.5, tick_num=None, rotation=70)
+        self.plot_count('updated', 'week', width=0.5, tick_num=30, rotation=70)
 
         plt.figure()
-        self.viz_count('updated', 'year', width=0.5, tick_num=None, rotation=20)
+        self.plot_count('updated', 'month', width=0.5, tick_num=None, rotation=70)
+
+        plt.figure()
+        self.plot_count('updated', 'year', width=0.5, tick_num=None, rotation=20)
 
         plt.show()
 
 
 def count():
     # notes = json.load(open('../data.json', 'r'))
-    notes = json.load(open('/home/wangjing/Evernote-2013-07-24.json', 'r'))
-    ve = VizEvernote(notes)
-    ve.count('created', 'week')
-    ve.count('created', 'year')
-    ve.count('created', 'month')
-    ve.count('updated', 'week')
-    ve.count('updated', 'year')
-    ve.count('updated', 'month')
-    ve.dump(open('./Evernote-2013-07-24-count.json', 'w'))
+    # notes = json.load(open('/home/wangjing/Evernote-2013-07-24.json', 'r'))
+    notes = json.load(open('/home/wangjing/Public/Evernote-2013-July.json', 'r'))
+    ve = EvernoteAnalyzer(notes)
+    # ve.count('created', 'week')
+    # ve.count('created', 'year')
+    # ve.count('created', 'month')
+    # ve.count('updated', 'week')
+    # ve.count('updated', 'year')
+    # ve.count('updated', 'month')
+    ve.group_by_tags('created')
+    # ve.dump(open('./Evernote-2013-07-24-count.json', 'w'))
+    ve.dump(open('./Evernote-2013-July-count.json', 'w'))
     # ve.dump(open('./Evernote-2013-07-24-count2.json', 'w'))
     # import ipdb;ipdb.set_trace()
     # ve.monthly_count()
@@ -227,9 +297,13 @@ def count():
 
 
 def viz():
-    ve = VizEvernote()
-    ve.load(open('./Evernote-2013-07-24-count.json', 'r'))
-    ve.viz()
+    ve = EvernoteVisualizer()
+    # ve.load(open('./Evernote-2013-07-24-count.json', 'r'))
+    ve.load(open('./Evernote-2013-July-count.json', 'r'))
+    # ve.plot()
+    plt.figure()
+    ve.plot_tags_t('created')
+    plt.show()
 
 
 if __name__ == "__main__":
