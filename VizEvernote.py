@@ -224,6 +224,20 @@ class EvernoteVisualizer(EvernoteAnalyzer):
                   % (resolution, t_type))
 
     def plot_tags_t(self, t_type, xticks_type, rotation):
+        """  For each tag, plot the `t_type` time of notes with this tag.
+
+        Parameters
+        ---------------
+        t_type : {'created', 'updated'}
+            type of time
+        xticks_type: {'week', 'month', 'year'}
+        rotation : int, {'vertical', 'horizontal'}
+            rotation of the xtick_labels
+
+        Returns
+        --------------
+        None
+        """
         tag_t = self.stat['tag_t']
         tag_seq = 0
         markers = 'o+x>'
@@ -244,9 +258,6 @@ class EvernoteVisualizer(EvernoteAnalyzer):
                 # vt /= (3600 * 24 * 30)
                 plt.plot(vt, tag_seq * np.ones((len(vt),)),
                          linestyle='', marker=markers[tag_seq % len(markers)])
-        print('tags', tags)
-        # dur = 3600 * 24
-        # dur = 'month'
         xticks = np.arange(min_t, max_t, self.dur_map[xticks_type])
         plt.xticks(xticks,
                    [str(i) for i in range(len(xticks))],
