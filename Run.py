@@ -2,6 +2,7 @@
 import json
 from VizEvernote import EvernoteAnalyzer, EvernoteVisualizer
 from VizNotebooks import NotebooksAnalyzer
+from VizNotebooks import NotebooksVisualizer
 import matplotlib.pyplot as plt
 
 
@@ -37,7 +38,14 @@ def viz():
 
 def test_notebooks():
     na = NotebooksAnalyzer('/home/wangjing/Public/EvernoteJSON/')
-    na._print()
+    print(na)
+    na.precentage('created', 'month')
+    na.dump(open('./Evernote-notebooks-ana.json', 'w'))
+
+    nv = NotebooksVisualizer()
+    nv.load(open('./Evernote-notebooks-ana.json', 'r'))
+    nv.plot_precentage('created', 'month')
+
 
 if __name__ == "__main__":
     # count()

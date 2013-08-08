@@ -46,8 +46,15 @@ def group_count(items, group_key):
     groups = itertools.groupby(items, group_key)
     return dict((k, len(list(group))) for k, group in groups)
 
+class Analyzer(object):
 
-class EvernoteAnalyzer(object):
+    def dump(self, fp):
+        json.dump(self.stat, fp)
+
+    def load(self, fp):
+        self.stat = json.load(fp)
+
+class EvernoteAnalyzer(Analyzer):
     """  Analyze Evernote Data
 
     Parameters
@@ -87,15 +94,15 @@ class EvernoteAnalyzer(object):
             a list of notes
         t_type : {'created', 'updated'}
             type of time. Only notes with this field is presented
-        tag : {0, str}
-            if tag == 0: tag field is note checked. Otherwise, only notes
+        tag : {None, str}
+            if tag == None: tag field is not checked. Otherwise, only notes
                 whose tag field equals are preserved.
 
         Returns
         --------------
         selected_notes : list
         """
-        if tag == '':
+        if tag == None:
             return [note for note in notes if note.get(t_type)]
         else:
             return [note for note in notes
@@ -135,9 +142,6 @@ class EvernoteAnalyzer(object):
             tag_t[stat_key] = [note[t_type] for note in tag_notes if note.get(t_type)]
         self.stat['tag_t'] = tag_t
 
-    def dump(self, fp):
-        json.dump(self.stat, fp)
-
     def strptime(self, t_str, resolution):
         """  convert **t_str** to datetime.time_struct
 
@@ -160,8 +164,9 @@ class EvernoteAnalyzer(object):
 
 class EvernoteVisualizer(EvernoteAnalyzer):
 
-    def load(self, fp):
-        self.stat = json.load(fp)
+    @staticmethod
+    def sort_pair(d):
+        return zip(*sorted(d.items()))
 
     def plot_count(self, t_type, resolution, width, tick_num, rotation):
         """  visualize the counts for notes for a duration.
@@ -182,9 +187,8 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         --------------
         """
 
-        def sort_pair(d):
-            return zip(*sorted(d.items()))
-        keys, values = sort_pair(self.stat['%s-%s' % (t_type, resolution)])
+
+        keys, values = self.sort_pair(self.stat['%s-%s' % (t_type, resolution)])
 
         start = self.strptime(keys[0], resolution)
         ind = np.array([get_time_diff(start, self.strptime(k, resolution), resolution)
