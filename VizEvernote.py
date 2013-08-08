@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 import time
 import itertools
 import json
@@ -7,35 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 from dateutil import rrule
-
-
-def bar(left, height, names, color, width, tick_num, rotation):
-    """  bar plot
-
-    Parameters
-    ---------------
-    left : left coordinates
-    height : heights of the bar
-    names : names for each bar
-    color : color
-    width : width of bar
-    tick_num : number of xticks. xticks are evenly distributed.
-    rotation : rotation of the xtick_labels
-
-    Returns
-    --------------
-    None
-    """
-    N = len(left)
-    dur = left[-1] - left[0]
-    plt.bar(left, height, color='r', width=width)
-    if tick_num is not None:
-        ticks = [names[pos] for pos in
-                 range(0, N, N // tick_num)]
-        tick_pos = np.arange(left[0], left[-1], int(dur / tick_num))
-        plt.xticks(tick_pos + width / 2., ticks, rotation=rotation)
-    else:
-        plt.xticks(np.array(left) + width / 2., names, rotation=rotation)
+from util import bar
 
 
 def get_time_diff(start_date, end_date, resolution):
@@ -292,36 +264,4 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         plt.show()
 
 
-def count():
-    # notes = json.load(open('../data.json', 'r'))
-    notes = json.load(open('/home/wangjing/Evernote-2013-07-24.json', 'r'))
-    # notes = json.load(open('/home/wangjing/Public/Evernote-2013-July.json', 'r'))
-    ve = EvernoteAnalyzer(notes)
-    # ve.count('created', 'week')
-    # ve.count('created', 'year')
-    # ve.count('created', 'month')
-    # ve.count('updated', 'week')
-    # ve.count('updated', 'year')
-    # ve.count('updated', 'month')
-    ve.group_by_tags('created')
-    ve.dump(open('./Evernote-2013-07-24-count.json', 'w'))
-    # ve.dump(open('./Evernote-2013-July-count.json', 'w'))
-    # ve.dump(open('./Evernote-2013-07-24-count2.json', 'w'))
-    # import ipdb;ipdb.set_trace()
-    # ve.monthly_count()
-    # daily_evernotes(notes)
 
-
-def viz():
-    ve = EvernoteVisualizer()
-    ve.load(open('./Evernote-2013-07-24-count.json', 'r'))
-    # ve.load(open('./Evernote-2013-July-count.json', 'r'))
-    # ve.plot()
-    plt.figure()
-    ve.plot_tags_t('created', 'month', 70)
-    plt.show()
-
-
-if __name__ == "__main__":
-    # count()
-    viz()

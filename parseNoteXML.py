@@ -1,3 +1,5 @@
+from __future__ import print_function, division, absolute_import
+import sys
 from lxml.html import etree
 from StringIO import StringIO
 #http://www.hanxiaogang.com/writing/parsing-evernote-export-file-enex-using-python/
@@ -40,7 +42,8 @@ def parseNoteXML(note_name):
                 try:
                     text.append(e.text)
                 except:
-                    print 'cannot print'
+                    print('cannot print', file=sys.stderr)
+
         note_dict[elem.tag] = text
         # NixNote use "Note"; Evernote Windows & Mac Client use "note"
         # if elem.tag == "Note" or elem.tag == 'note':
