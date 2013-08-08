@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 import numpy as np
 
 
@@ -31,63 +32,58 @@ def bar(left, height, names, color, width, tick_num, rotation):
         plt.xticks(np.array(left) + width / 2., names, rotation=rotation)
 
 
-"""
-Stacked area plot for 1D arrays inspired by Douglas Y'barbo's stackoverflow
-answer:
-http://stackoverflow.com/questions/2225995/how-can-i-create-stacked-line-graph-with-matplotlib
-
-(http://stackoverflow.com/users/66549/doug)
-
-"""
-import numpy as np
-
-__all__ = ['stackplot']
-
-
-def stackplot(axes, x, *args, **kwargs):
+def stackplot(axes, x, y, legends, cmap=plt.cm.Spectral, xtick_labels=None,
+              xtick_num=None, rotation=None, **kwargs):
     """Draws a stacked area plot.
 
+    Parameters
+    ----------------
     *x* : 1d array of dimension N
 
-    *y* : 2d array of dimension MxN, OR any number 1d arrays each of dimension
-          1xN. The data is assumed to be unstacked. Each of the following
-          calls is legal::
-
+    *y* : 2d array of dimension MxN,
             stackplot(x, y)               # where y is MxN
-            stackplot(x, y1, y2, y3, y4)  # where y1, y2, y3, y4, are all 1xNm
+    *cmap* : color map
 
-    Keyword arguments:
 
-    *colors* : A list or tuple of colors. These will be cycled through and
-               used to colour the stacked areas.
-               All other keyword arguments are passed to
-               :func:`~matplotlib.Axes.fill_between`
+    Returns
+    --------------------
+    *r* : A list of
 
-    Returns *r* : A list of
+    See Also
+    ----------------------
     :class:`~matplotlib.collections.PolyCollection`, one for each
     element in the stacked area plot.
     """
 
-    if len(args) == 1:
-        y = np.atleast_2d(*args)
-    elif len(args) > 1:
-        y = np.row_stack(args)
-
-    colors = kwargs.pop('colors', None)
-    if colors is not None:
-        axes.set_color_cycle(colors)
-
+    y = np.atleast_2d(y)
+    M, N = y.shape
     # Assume data passed has not been 'stacked', so stack it here.
     y_stack = np.cumsum(y, axis=0)
 
     r = []
 
+    # colors = np.linspace(0, 1, M)
+    colors = np.random.random(size=M)
+
     # Color between x = 0 and the first array.
     r.append(axes.fill_between(x, 0, y_stack[0, :],
-             facecolor=axes._get_lines.color_cycle.next(), **kwargs))
+             facecolor=cmap(colors[0]), **kwargs))
 
     # Color between array i-1 and array i
     for i in xrange(len(y) - 1):
         r.append(axes.fill_between(x, y_stack[i, :], y_stack[i + 1, :],
-                 facecolor=axes._get_lines.color_cycle.next(), **kwargs))
+                 facecolor=cmap(colors[i + 1]), **kwargs))
+
+    fontP = FontProperties()
+    fontP.set_size('small')
+    # Add Legend
+    pl = []
+    for i in xrange(M):
+        pl.append(plt.Rectangle((0, 0), 1, 1, facecolor=cmap(colors[i])))
+
+    plt.legend(pl, legends, bbox_to_anchor=(0, 0, 1, 1),
+               bbox_transform=plt.gcf().transFigure, prop=fontP)
+    plt.xticks(x, xtick_labels, rotation=rotation)
+    plt.show()
+
     return r

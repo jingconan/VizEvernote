@@ -36,7 +36,7 @@ def viz():
     plt.show()
 
 
-def test_notebooks():
+def test_notebooks_created_month():
     na = NotebooksAnalyzer('/home/wangjing/Public/EvernoteJSON/')
     print(na)
     na.precentage('created', 'month')
@@ -50,4 +50,4 @@ def test_notebooks():
 if __name__ == "__main__":
     # count()
     # viz()
-    test_notebooks()
+    test_notebooks_created_month()

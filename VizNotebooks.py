@@ -24,7 +24,7 @@ class NotebooksAnalyzer(EvernoteAnalyzer):
             if os.path.isfile(f_path) and f.endswith('.json'):
                 with open(f_path, 'r') as note_f:
                     notes = json.load(note_f)
-                    nb_name = os.path.basename(f)
+                    nb_name = os.path.basename(f).rsplit('.json')[0]
                     self.notebooks.append(nb_name)
                     self.nb_data[nb_name] = notes
                     self.analyzers[nb_name] = EvernoteAnalyzer(notes)
@@ -49,12 +49,12 @@ class NotebooksAnalyzer(EvernoteAnalyzer):
             for dt in dates:
                 stat_data[dt].append(pd.get(dt, 0))
 
-        self.stat['p_data_%s-%s'%(t_type, resolution)] = stat_data
+        self.stat['p_data_%s-%s' % (t_type, resolution)] = stat_data
+
 
 class NotebooksVisualizer(EvernoteVisualizer):
     def plot_precentage(self, t_type, resolution):
-        k =  'p_data_%s-%s'%(t_type, resolution)
+        k = 'p_data_%s-%s' % (t_type, resolution)
         dates, precentages = self.sort_pair(self.stat[k])
-        stackplot(plt.gca(), np.arange(len(precentages)), zip(*precentages))
-        plt.show()
-
+        stackplot(plt.gca(), np.arange(len(precentages)), zip(*precentages),
+                  self.stat['notebooks'], xtick_labels=dates, rotation=30)
