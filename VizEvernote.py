@@ -46,6 +46,7 @@ def group_count(items, group_key):
     groups = itertools.groupby(items, group_key)
     return dict((k, len(list(group))) for k, group in groups)
 
+
 class Analyzer(object):
 
     def dump(self, fp):
@@ -53,6 +54,7 @@ class Analyzer(object):
 
     def load(self, fp):
         self.stat = json.load(fp)
+
 
 class EvernoteAnalyzer(Analyzer):
     """  Analyze Evernote Data
@@ -102,7 +104,7 @@ class EvernoteAnalyzer(Analyzer):
         --------------
         selected_notes : list
         """
-        if tag == None:
+        if tag is None:
             return [note for note in notes if note.get(t_type)]
         else:
             return [note for note in notes
@@ -127,6 +129,7 @@ class EvernoteAnalyzer(Analyzer):
             stat_key = '%s-%s-%s' % (t_type, resolution, tag)
 
         notes = self.filter(self.notes, t_type, tag)
+        # if resolution == 'year': import ipdb;ipdb.set_trace()
         tm = [self.parse_time(note[t_type]) for note in notes]
         sorted_tm = sorted(tm, key=lambda x: time.mktime(x))
         group_key = lambda x: time.strftime(self.key_map[resolution], x)
@@ -186,13 +189,12 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         Returns
         --------------
         """
-
-
         keys, values = self.sort_pair(self.stat['%s-%s' % (t_type, resolution)])
 
         start = self.strptime(keys[0], resolution)
         ind = np.array([get_time_diff(start, self.strptime(k, resolution), resolution)
                         for k in keys])
+        import ipdb;ipdb.set_trace()
         bar(ind, values, keys, 'r', width, tick_num, rotation)
         plt.xlabel('time')
         plt.ylabel('No.')
@@ -247,8 +249,8 @@ class EvernoteVisualizer(EvernoteAnalyzer):
     def plot(self):
         """  shortcut for visualization
         """
-        # plt.figure()
-        # self.viz_count('created', 'week', width=0.5, tick_num=30, rotation=90)
+        plt.figure()
+        self.plot_count('created', 'week', width=0.5, tick_num=30, rotation=90)
 
         # plt.figure()
         # self.plot_count('created', 'month', width=0.5, tick_num=None, rotation=90)
@@ -256,16 +258,13 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         # plt.figure()
         # self.plot_count('created', 'year', width=0.5, tick_num=None, rotation=20)
 
-        plt.figure()
-        self.plot_count('updated', 'week', width=0.5, tick_num=30, rotation=70)
+        # plt.figure()
+        # self.plot_count('updated', 'week', width=0.5, tick_num=30, rotation=70)
 
-        plt.figure()
-        self.plot_count('updated', 'month', width=0.5, tick_num=None, rotation=70)
+        # plt.figure()
+        # self.plot_count('updated', 'month', width=0.5, tick_num=None, rotation=70)
 
-        plt.figure()
-        self.plot_count('updated', 'year', width=0.5, tick_num=None, rotation=20)
+        # plt.figure()
+        # self.plot_count('updated', 'year', width=0.5, tick_num=None, rotation=20)
 
         plt.show()
-
-
-
