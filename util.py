@@ -84,7 +84,9 @@ def stackplot(axes, x, y, legends, cmap=plt.cm.Spectral, xtick_labels=None,
 
     plt.legend(pl, legends, bbox_to_anchor=(0, 0, 1, 1),
                bbox_transform=plt.gcf().transFigure, prop=fontP)
+    if xtick_num is not None:
+        x = [x[i] for i in range(0, N, N/xtick_num)]
+        xtick_labels = [xtick_labels[i] for i in range(0, N, N/xtick_num)]
     plt.xticks(x, xtick_labels, rotation=rotation)
-    plt.show()
-
+    # plt.show()
     return r

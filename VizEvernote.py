@@ -194,7 +194,6 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         start = self.strptime(keys[0], resolution)
         ind = np.array([get_time_diff(start, self.strptime(k, resolution), resolution)
                         for k in keys])
-        import ipdb;ipdb.set_trace()
         bar(ind, values, keys, 'r', width, tick_num, rotation)
         plt.xlabel('time')
         plt.ylabel('No.')
@@ -245,26 +244,3 @@ class EvernoteVisualizer(EvernoteAnalyzer):
         plt.ylim([0, len(tags) + 1])
         plt.title("'%s' time by '%s' of different tags."
                   % (t_type, xticks_type))
-
-    def plot(self):
-        """  shortcut for visualization
-        """
-        plt.figure()
-        self.plot_count('created', 'week', width=0.5, tick_num=30, rotation=90)
-
-        # plt.figure()
-        # self.plot_count('created', 'month', width=0.5, tick_num=None, rotation=90)
-
-        # plt.figure()
-        # self.plot_count('created', 'year', width=0.5, tick_num=None, rotation=20)
-
-        # plt.figure()
-        # self.plot_count('updated', 'week', width=0.5, tick_num=30, rotation=70)
-
-        # plt.figure()
-        # self.plot_count('updated', 'month', width=0.5, tick_num=None, rotation=70)
-
-        # plt.figure()
-        # self.plot_count('updated', 'year', width=0.5, tick_num=None, rotation=20)
-
-        plt.show()

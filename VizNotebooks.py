@@ -33,7 +33,7 @@ class NotebooksAnalyzer(EvernoteAnalyzer):
     def __str__(self):
         return 'Notebooks:\n%s' % ('\n'.join(self.notebooks))
 
-    def precentage(self, t_type, resolution):
+    def count(self, t_type, resolution):
         p_data = []
         for nb in self.notebooks:
             gc = self.analyzers[nb].count(t_type, resolution)
@@ -53,8 +53,13 @@ class NotebooksAnalyzer(EvernoteAnalyzer):
 
 
 class NotebooksVisualizer(EvernoteVisualizer):
-    def plot_precentage(self, t_type, resolution):
+    def area_plot(self, t_type, resolution, **kwargs):
         k = 'p_data_%s-%s' % (t_type, resolution)
-        dates, precentages = self.sort_pair(self.stat[k])
-        stackplot(plt.gca(), np.arange(len(precentages)), zip(*precentages),
-                  self.stat['notebooks'], xtick_labels=dates, rotation=30)
+        dates, counts = self.sort_pair(self.stat[k])
+        stackplot(plt.gca(), np.arange(len(counts)), zip(*counts),
+                  self.stat['notebooks'], xtick_labels=dates,
+                  **kwargs)
+        plt.xlabel('time')
+        plt.ylabel('No.')
+        plt.title("No. of notes per '%s' according to '%s' time in each notebook."
+                  % (resolution, t_type))
